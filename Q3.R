@@ -10,7 +10,7 @@ listing.all$Week.of.Day <- as.Date(listing.all$Week.of.Day)
 listing.all$Year <- format(listing.all$Week.of.Day, "%Y")
 listing.all$Week <- format(listing.all$Week.of.Day, "%W")
 sum.time.state <- ddply(listing.all, .(Week.of.Day, State), summarise,
-              Properties = sum(numberOfProperties),
+              Properties = sum(numberOfProperties, na.rm = T),
               Listing.Price = mean(averageListingPrice, na.rm = T))
 sum.time.state$Week.of.Day <- as.Date(sum.time.state$Week.of.Day)
 # StateColorVector <- palette()
@@ -39,9 +39,9 @@ traffic.week <- ddply(traffic, .(City, State, Year, Week), summarise,
 
 traffic.total <- merge(traffic.week, listing.all, by = c("City", "State","Year", "Week"))
 
-traffic.CA <- subset(traffic.total, State == 'CA', Year = "2014")
+traffic.GA <- subset(traffic.total, State == 'GA', Year = "2014")
 
-traffic.CA.simple <- ddply(traffic.CA, .(City), summarise,
+traffic.GA.simple <- ddply(traffic.GA, .(City), summarise,
                            NationalAvgT = mean(national.traffic),
                            StateAvgT = mean(state.traffic),
                            latitude = mean(latitude),
@@ -49,18 +49,18 @@ traffic.CA.simple <- ddply(traffic.CA, .(City), summarise,
                            AvgListPrice = mean(averageListingPrice),
                            NumProperty = sum(numberOfProperties),
                            MedListPrice = mean(medianListingPrice))
-traffic.CA.simple$PriceRatio = (traffic.CA.simple$AvgListPrice/
-                                  traffic.CA.simple$MedListPrice)
+traffic.GA.simple$PriceRatio = (traffic.GA.simple$AvgListPrice/
+                                  traffic.GA.simple$MedListPrice)
 
 
-center_lat <- mean(traffic.CA.simple$latitude)
-center_lon <- mean(traffic.CA.simple$longitude)
-map.CA <- get_map(location=c(center_lon, center_lat),zoom = 6)
-CAMap <- ggmap(map.CA,legent="topleft")
-CAMap + geom_point(aes(x=longitude,y=latitude, size = PriceRatio), data = traffic.CA.simple, color = "blue", alpha = 0.5)
+center_lat <- mean(traffic.GA.simple$latitude)
+center_lon <- mean(traffic.GA.simple$longitude)
+map.GA <- get_map(location=c(center_lon, center_lat),zoom = 6)
+GAMap <- ggmap(map.GA,legent="topleft")
+GAMap + geom_point(aes(x=longitude,y=latitude, size = PriceRatio), data = traffic.GA.simple, color = "blue", alpha = 0.5)
 
 # Let's read the weather data!
-weather <- read.csv("CA-weather.csv", header = T)
+weather <- read.csv("GA-weather.csv", header = T)
 weather$DATE <- strptime(weather$DATE, "%Y%m%d")
 weather$Year <- format(weather$DATE, "%Y")
 weather$Week <- format(weather$DATE, "%W")
@@ -80,18 +80,18 @@ weather.week <- ddply(weather, .(STATION_NAME, Year, Week),summarise,
 low.t <- 0
 high.t <- 40
 for (i in 34:51) {
-  CA.housing <- traffic.CA[traffic.CA$Week == i,]
+  GA.housing <- traffic.GA[traffic.GA$Week == i,]
   weather.plot <- weather.week[weather.week$Week == i,]
-  CA.housing$state.traffic = CA.housing$national.traffic*100
+  GA.housing$state.traffic = GA.housing$national.traffic*100
   weather.plot$AvgTemp = weather.plot$tmax
   weather.plot2 <- weather.plot[,c(1,4,5,8)]
-  ggmap(map.CA) + stat_summary2d(aes(x=longitude, y = latitude, z = AvgTemp),
+  ggmap(map.GA) + stat_summary2d(aes(x=longitude, y = latitude, z = AvgTemp),
                                          data = weather.plot2, fun = median, binwidth = c(0.3, 0.3), alpha = 0.5) +
     scale_fill_gradient(name="Temp", low = "green", high = "red", limit = c(low.t, high.t)) +
-    geom_point(aes(x=longitude,y=latitude, size = state.traffic), color = "blue", alpha = 0.7, data = CA.housing) + scale_size(name="Traffic")
+    geom_point(aes(x=longitude,y=latitude, size = state.traffic), color = "blue", alpha = 0.7, data = GA.housing) + scale_size(name="Traffic")
   
     
-  file = paste("CA",as.character(i),".png",sep="")
+  file = paste("GA",as.character(i),".png",sep="")
   ggsave(file)
 }
 
